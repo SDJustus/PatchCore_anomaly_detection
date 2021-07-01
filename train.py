@@ -342,13 +342,16 @@ def get_args():
     parser.add_argument('--save_src_code', default=True)
     parser.add_argument('--save_anomaly_map', default=True)
     parser.add_argument('--n_neighbors', type=int, default=9)
+    parser.add_argument('--device')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
-
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     args = get_args()
+    if args.device:
+        device = device
     
     trainer = pl.Trainer.from_argparse_args(args, default_root_dir=os.path.join(args.project_root_path, args.category), max_epochs=args.num_epochs) #, check_val_every_n_epoch=args.val_freq,  num_sanity_val_steps=0) # ,fast_dev_run=True)
     model = STPM(hparams=args)
