@@ -33,8 +33,7 @@ from __future__ import print_function
 import numpy as np
 from sklearn.metrics import pairwise_distances
 from sampling_methods.sampling_def import SamplingMethod
-
-
+from tqdm import tqdm
 class kCenterGreedy(SamplingMethod):
 
   def __init__(self, X, y, seed, metric='euclidean'):
@@ -66,7 +65,7 @@ class kCenterGreedy(SamplingMethod):
     if cluster_centers:
       # Update min_distances for all examples given new cluster center.
       x = self.features[cluster_centers]
-      dist = pairwise_distances(self.features, x, metric=self.metric)
+      dist = pairwise_distances(self.features, x, metric=self.metric, n_jobs=4)
 
       if self.min_distances is None:
         self.min_distances = np.min(dist, axis=1).reshape(-1,1)
@@ -100,8 +99,8 @@ class kCenterGreedy(SamplingMethod):
       self.update_distances(already_selected, only_new=True, reset_dist=False)
 
     new_batch = []
-
-    for _ in range(N):
+    print("N:", N)
+    for _ in tqdm(range(N)):
       if self.already_selected is None:
         # Initialize centers with a randomly selected datapoint
         ind = np.random.choice(np.arange(self.n_obs))
@@ -115,7 +114,6 @@ class kCenterGreedy(SamplingMethod):
       new_batch.append(ind)
     print('Maximum distance from cluster centers is %0.2f'
             % max(self.min_distances))
-
 
     self.already_selected = already_selected
 
