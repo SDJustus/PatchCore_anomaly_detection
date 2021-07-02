@@ -8,10 +8,9 @@ class Visualizer():
     Returns:
         Visualizer: Class file.
     """
-    def __init__(self, cfg):        
-        self.cfg = cfg
+    def __init__(self, name ):        
         from tensorboardX import SummaryWriter
-        self.writer = SummaryWriter(log_dir=os.path.join("../tensorboard/Patchcore/", self.cfg.name))
+        self.writer = SummaryWriter(log_dir=os.path.join("../tensorboard/Patchcore/", name))
 
     def plot_current_errors(self, total_steps, errors):
         """Plot current errros.

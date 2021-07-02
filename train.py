@@ -188,7 +188,7 @@ class STPM(pl.LightningModule):
                         # transforms.CenterCrop(args.input_size)
                          ])
         
-        self.visualizer = Visualizer({"name": "first_test"})
+        self.visualizer = Visualizer("first_test")
 
         self.inv_normalize = transforms.Normalize(mean=[-0.485/0.229, -0.456/0.224, -0.406/0.255], std=[1/0.229, 1/0.224, 1/0.255])
 
