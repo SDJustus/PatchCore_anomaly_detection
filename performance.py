@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-from sklearn.metrics import auc, roc_curve
-from sklearn.metrics.classification import confusion_matrix, precision_recall_fscore_support
+from sklearn.metrics import auc, roc_curve, confusion_matrix, precision_recall_fscore_support
 
 def get_performance(y_trues, y_preds):
     fpr, tpr, t = roc_curve(y_trues, y_preds, pos_label=1)
