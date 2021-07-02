@@ -22,6 +22,8 @@ from sklearn.random_projection import SparseRandomProjection
 from sklearn.neighbors import NearestNeighbors
 from scipy.ndimage import gaussian_filter
 from torchvision.models import wide_resnet50_2
+from .performance import *
+from .visualizer import Visualizer
 
 def copy_files(src, dst, ignores=[]):
     src_files = os.listdir(src)
@@ -185,6 +187,8 @@ class STPM(pl.LightningModule):
                         transforms.ToTensor(),
                         # transforms.CenterCrop(args.input_size)
                          ])
+        
+        self.visualizer = Visualizer({"name": "first_test"})
 
         self.inv_normalize = transforms.Normalize(mean=[-0.485/0.229, -0.456/0.224, -0.406/0.255], std=[1/0.229, 1/0.224, 1/0.255])
 
@@ -282,14 +286,14 @@ class STPM(pl.LightningModule):
         # NN
         nbrs = NearestNeighbors(n_neighbors=args.n_neighbors, algorithm='ball_tree', metric='minkowski', p=2).fit(self.embedding_coreset)
         score_patches, _ = nbrs.kneighbors(embedding_test)
-        anomaly_map = score_patches[:,0].reshape((28,28))
+        #anomaly_map = score_patches[:,0].reshape((28,28))
         N_b = score_patches[np.argmax(score_patches[:,0])]
         w = (1 - (np.max(np.exp(N_b))/np.sum(np.exp(N_b))))
         score = w*max(score_patches[:,0]) # Image-level score
         
         #gt_np = gt.cpu().numpy()[0,0].astype(int)
-        anomaly_map_resized = cv2.resize(anomaly_map, (args.input_size, args.input_size))
-        anomaly_map_resized_blur = gaussian_filter(anomaly_map_resized, sigma=4)
+        #anomaly_map_resized = cv2.resize(anomaly_map, (args.input_size, args.input_size))
+        #anomaly_map_resized_blur = gaussian_filter(anomaly_map_resized, sigma=4)
         
         #self.gt_list_px_lvl.extend(gt_np.ravel())
         #self.pred_list_px_lvl.extend(anomaly_map_resized_blur.ravel())
@@ -299,21 +303,32 @@ class STPM(pl.LightningModule):
         # save images
         x = self.inv_normalize(x)
         input_x = cv2.cvtColor(x.permute(0,2,3,1).cpu().numpy()[0]*255, cv2.COLOR_BGR2RGB)
-        self.save_anomaly_map(anomaly_map_resized_blur, input_x, 
-                              #gt_np*255,
-                              file_name[0], x_type[0])
+        #self.save_anomaly_map(anomaly_map_resized_blur, input_x, 
+        #                      #gt_np*255,
+        #                      file_name[0], x_type[0])
 
     def test_epoch_end(self, outputs):
         #print("Total pixel-level auc-roc score :")
         #pixel_auc = roc_auc_score(self.gt_list_px_lvl, self.pred_list_px_lvl)
         #print(pixel_auc)
         print("Total image-level auc-roc score :")
-        img_auc = roc_auc_score(self.gt_list_img_lvl, self.pred_list_img_lvl)
-        print(img_auc)
+        y_trues = self.gt_list_img_lvl.copy()
+        y_preds = self.pred_list_img_lvl.copy()
+        performance, t = get_performance(y_trues, y_preds)
+        print(t)
+        tpc, fpc, tnc, fnc, precisions, recalls, n_thresholds = get_values_for_pr_curve(y_trues=y_trues, y_preds=y_preds, thresholds=t)
+        print(tpc)
+        print(fpc)
+        print(tnc)
+        print(fnc)
+        print(precisions)
+        print(recalls)
+        print(n_thresholds)
+        print(performance)
+        self.visualizer.writer.add_pr_curve_raw("Precision_recall_curve", true_positive_counts=tpc, false_positive_counts=fpc, true_negative_counts=tnc, false_negative_counts=fnc,
+                                                precision=precisions, recall=recalls, num_thresholds=n_thresholds, global_step=1)
+        self.visualizer.plot_performance(1, performance=performance)
         print('test_epoch_end')
-        values = {#'pixel_auc': pixel_auc, 
-                  'img_auc': img_auc}
-        self.log_dict(values)
         # anomaly_list = []
         # normal_list = []
         # for i in range(len(self.gt_list_img_lvl)):
