@@ -22,8 +22,8 @@ from sklearn.random_projection import SparseRandomProjection
 from sklearn.neighbors import NearestNeighbors
 from scipy.ndimage import gaussian_filter
 from torchvision.models import wide_resnet50_2
-from .performance import *
-from .visualizer import Visualizer
+from performance import *
+from visualizer import Visualizer
 
 def copy_files(src, dst, ignores=[]):
     src_files = os.listdir(src)
